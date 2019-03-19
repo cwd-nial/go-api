@@ -19,7 +19,7 @@ var artists []Artist
 func main() {
 	router := mux.NewRouter()
 
-	popupateArtists()
+	populateArtists()
 
 	router.HandleFunc("/artists", getArtists).Methods("GET")
 	router.HandleFunc("/artists/{id}", getArtist).Methods("GET")
@@ -64,7 +64,7 @@ func deleteArtist(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func popupateArtists() {
+func populateArtists() {
 	artists = append(artists,
 		Artist{"1", "Jamie N", "Commons", ""},
 		Artist{"2", "Joshua", "James", ""},
