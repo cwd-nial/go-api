@@ -13,3 +13,4 @@
 
 # JetBrains Goland folders
 .idea/*
+vendor/*
