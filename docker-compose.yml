@@ -9,9 +9,9 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - localhost
+      - redis
 
-  localhost:
+  redis:
     image: redis:latest
     container_name: redis
     ports:

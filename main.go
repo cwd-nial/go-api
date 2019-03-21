@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/cwd-nial/go-api/storages"
 	"github.com/gorilla/mux"
 	"log"
@@ -24,56 +23,60 @@ func main() {
 	populateArtists()
 
 	router.HandleFunc("/artists", getArtists).Methods("GET")
-	/*router.HandleFunc("/artists/{id}", getArtist).Methods("GET")
+	router.HandleFunc("/artists/{id}", getArtist).Methods("GET")
 	router.HandleFunc("/artists", createArtist).Methods("POST")
-	router.HandleFunc("/artists/{id}", deleteArtist).Methods("DELETE")*/
+	router.HandleFunc("/artists/{id}", deleteArtist).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
 
 func getArtists(w http.ResponseWriter, r *http.Request) {
 
-	m := make(map[string]Artist)
-	for _, v := range client.Keys("Artist*").Val() {
-		fmt.Print(v)
-		a := client.HGetAll("Artist:" + v).Val()
+	var artists []Artist
 
-		fmt.Print(a)
+	for _, v := range client.Keys("Artist:*").Val() {
+		itemData := client.HGetAll(v).Val()
+		artists = append(artists, Artist{
+			itemData["ID"],
+			itemData["FirstName"],
+			itemData["LastName"],
+			itemData["Pseudonym"],
+		})
 	}
-
-	fmt.Print(m)
-
-	_ = json.NewEncoder(w).Encode(m)
+	_ = json.NewEncoder(w).Encode(artists)
 }
 
-/*func getArtist(w http.ResponseWriter, r *http.Request) {
+func getArtist(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
-	var a Artist
-	if err := json.Unmarshal([]byte(v), &a); err != nil {
-		log.Println(err)
+	var artist Artist
+	itemData := client.HGetAll("Artist:" + params["id"]).Val()
+	artist = Artist{
+		itemData["ID"],
+		itemData["FirstName"],
+		itemData["LastName"],
+		itemData["Pseudonym"],
 	}
+	_ = json.NewEncoder(w).Encode(artist)
 }
 
 func createArtist(w http.ResponseWriter, r *http.Request) {
 	var artist Artist
 
 	_ = json.NewDecoder(r.Body).Decode(&artist)
-	artists = append(artists, artist)
-	_ = json.NewEncoder(w).Encode(artists)
+	i := "Artist:" + artist.ID
+	client.HSet(i, "ID", artist.ID)
+	client.HSet(i, "FirstName", artist.FirstName)
+	client.HSet(i, "LastName", artist.LastName)
+	client.HSet(i, "Pseudonym", artist.Pseudonym)
+	_ = json.NewEncoder(w).Encode(artist)
 }
 
 func deleteArtist(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
-	for index, item := range artists {
-		if item.ID == params["id"] {
-			artists = append(artists[:index], artists[index+1:]...)
-			_ = json.NewEncoder(w).Encode(artists)
-			return
-		}
-	}
-}*/
+	client.Del("Artist:" + params["id"])
+}
 
 func populateArtists() {
 
@@ -90,12 +93,9 @@ func populateArtists() {
 	// add to redis DB
 	for _, v := range artists {
 		i := "Artist:" + v.ID
+		client.HSet(i, "ID", v.ID)
 		client.HSet(i, "FirstName", v.FirstName)
-	}
-
-	// check if it worked
-	for i := 0; i < len(artists); i++ {
-		a := client.HGetAll("Artist:" + artists[i].ID).Val()
-		fmt.Print("%s\n", a)
+		client.HSet(i, "LastName", v.LastName)
+		client.HSet(i, "Pseudonym", v.Pseudonym)
 	}
 }
